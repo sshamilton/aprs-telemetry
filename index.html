@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APRS Status</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; transition: background 0.5s; }
+        .night { background: #2c3e50; color: white; }
+        .day { background: #ecf0f1; color: black; }
+        .card { padding: 20px; border-radius: 15px; margin: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <div id="app" class="card">
+        <h1 id="status-text">Loading...</h1>
+        <img id="status-img" src="" style="max-width: 200px;">
+        <p>Battery: <span id="batt">--</span>V</p>
+        <p>Solar: <span id="solar">--</span>V</p>
+        <p><small>Last Change: <span id="change-time">--</span></small></p>
+    </div>
+
+    <script>
+        fetch('data.json')
+            .then(response => response.json())
+            .then(data => {
+                const isOn = data.light_status === "ON";
+                document.body.className = isOn ? "night" : "day";
+                document.getElementById('status-text').innerText = "The light is currently " + data.light_status;
+                document.getElementById('batt').innerText = data.battery_v;
+                document.getElementById('solar').innerText = data.solar_v;
+                document.getElementById('change-time').innerText = new Date(data.last_changed).toLocaleString();
+                document.getElementById('status-img').src = isOn ? "night.jpg" : "day.jpg";
+            });
+    </script>
+</body>
+</html>
