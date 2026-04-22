@@ -24,7 +24,7 @@ jobs:
           echo "Fetching data for $STATION..."
           
           # 1. Fetch raw data
-          curl -s "https://api.aprs.fi/api/get?name=$STATION&what=loc&apikey=$APRS_API_KEY&format=json" > raw.json
+          curl -s "https://api.aprs.fi/api/get?name=W2KGY-2&what=loc&apikey=$APRS_API_KEY&format=json" > raw.json
           
           # DEBUG: Log the raw response so you can see it in the Action logs
           echo "Raw API Response:"
