@@ -1,30 +1,60 @@
 name: Update APRS Data
 on:
   schedule:
-    - cron: '*/15 * * * *' # Runs every 15 minutes
-  workflow_dispatch: # Allows manual refresh
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
 
 jobs:
   update:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Fetch APRS Data
+
+      - name: Fetch and Process Data
+        env:
+          APRS_API_KEY: ${{ secrets.APRS_API_KEY }}
         run: |
-          # Query aprs.fi for your station (replace CALLSIGN)
-          STATION="YOUR_CALLSIGN"
-          API_URL="https://api.aprs.fi/api/get?name=$STATION&what=loc&apikey=${{ secrets.APRS_API_KEY }}&format=json"
+          STATION="YOUR_CALLSIGN" # Replace with your callsign
           
-          # Use curl to get data and save it
-          curl -s "$API_URL" > latest_raw.json
+          # 1. Fetch raw data
+          curl -s "https://api.aprs.fi/api/get?name=$STATION&what=loc&apikey=$APRS_API_KEY&format=json" > raw.json
           
-          # (Optional) Add custom JS/Python logic here to compare 
-          # latest_raw with current data.json and update "last_changed"
+          # 2. Extract values (assuming Telemetry 1=Solar, 2=Battery, 3=Light)
+          # Note: Adjust the array indices [0, 1, 2] based on your specific telemetry setup
+          SOLAR=$(jq -r '.entries[0].telemetry[0]' raw.json)
+          BATT=$(jq -r '.entries[0].telemetry[1]' raw.json)
+          LIGHT_V=$(jq -r '.entries[0].telemetry[2]' raw.json)
           
+          # 3. Determine status
+          CURRENT_STATUS=$( [ $(echo "$LIGHT_V > 5" | bc -l) -eq 1 ] && echo "ON" || echo "OFF" )
+          
+          # 4. Read old status to check for change
+          if [ -f data.json ]; then
+            OLD_STATUS=$(jq -r '.light_status' data.json)
+            LAST_CHANGED=$(jq -r '.last_changed' data.json)
+          else
+            OLD_STATUS="UNKNOWN"
+            LAST_CHANGED=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          fi
+
+          # 5. Update timestamp if status flipped
+          if [ "$CURRENT_STATUS" != "$OLD_STATUS" ]; then
+            LAST_CHANGED=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          fi
+
+          # 6. Create the final data.json
+          jq -n \
+            --arg last_updated "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+            --arg light_status "$CURRENT_STATUS" \
+            --arg last_changed "$LAST_CHANGED" \
+            --argjson solar_v "$SOLAR" \
+            --argjson battery_v "$BATT" \
+            '{last_updated: $last_updated, light_status: $light_status, last_changed: $last_changed, solar_v: $solar_v, battery_v: $battery_v}' > data.json
+
       - name: Commit and Push
         run: |
           git config user.name "GitHub Action"
           git config user.email "action@github.com"
           git add data.json
-          git commit -m "Update telemetry" || exit 0
-          git push
+          # Only commit if data.json actually changed
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update telemetry: $(date)" && git push)
