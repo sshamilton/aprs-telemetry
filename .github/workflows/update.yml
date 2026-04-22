@@ -1,0 +1,30 @@
+name: Update APRS Data
+on:
+  schedule:
+    - cron: '*/15 * * * *' # Runs every 15 minutes
+  workflow_dispatch: # Allows manual refresh
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Fetch APRS Data
+        run: |
+          # Query aprs.fi for your station (replace CALLSIGN)
+          STATION="YOUR_CALLSIGN"
+          API_URL="https://api.aprs.fi/api/get?name=$STATION&what=loc&apikey=${{ secrets.APRS_API_KEY }}&format=json"
+          
+          # Use curl to get data and save it
+          curl -s "$API_URL" > latest_raw.json
+          
+          # (Optional) Add custom JS/Python logic here to compare 
+          # latest_raw with current data.json and update "last_changed"
+          
+      - name: Commit and Push
+        run: |
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+          git add data.json
+          git commit -m "Update telemetry" || exit 0
+          git push
