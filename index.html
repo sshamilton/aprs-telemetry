@@ -17,6 +17,7 @@
         <p>Battery: <span id="batt">--</span>V</p>
         <p>Solar: <span id="solar">--</span>V</p>
         <p><small>Last Change: <span id="change-time">--</span></small></p>
+        <p><small>Last Updated: <span id="updated-time">--</span></small></p>
     </div>
 
     <script>
@@ -29,6 +30,7 @@
                 document.getElementById('batt').innerText = data.battery_v;
                 document.getElementById('solar').innerText = data.solar_v;
                 document.getElementById('change-time').innerText = new Date(data.last_changed).toLocaleString();
+                document.getElementById('updated-time').innerText = new Date(data.last_updated).toLocaleString();
                 document.getElementById('status-img').src = isOn ? "night.jpg" : "day.jpg";
             });
     </script>
