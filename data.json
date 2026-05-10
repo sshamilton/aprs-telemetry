@@ -1,9 +1,9 @@
 {
-  "last_updated": "2026-05-10 08:46:41",
+  "last_updated": "2026-05-10 09:16:46",
   "last_changed": "2026-05-10 06:32:22",
   "light_status": "OFF",
-  "battery_v": 26.1,
-  "solar_v": 34.1,
+  "battery_v": 27.7,
+  "solar_v": 30.0,
   "light_v": 0.0,
-  "sequence": "416"
+  "sequence": "417"
 }
